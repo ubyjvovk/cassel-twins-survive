@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "component": "local/cassel-twins-survive",
+  "version": "0.1.2-prototype",
+  "revision": "1",
+  "artifact": "sha256:0ddc54517db71b24acc820506bc92f68f38866a5c81419e47910db9e17ac4559",
+  "game": {
+    "id": "cyberpunk2077",
+    "version": "2.31",
+    "dlc": [
+      "phantom-liberty"
+    ]
+  },
+  "dependencies": {
+    "ArchiveXL": {
+      "source": {
+        "type": "nexus",
+        "game": "cyberpunk2077",
+        "modId": 4198,
+        "fileId": 159683
+      }
+    }
+  },
+  "mappings": [
+    {
+      "from": "archive",
+      "to": "archive",
+      "class": "mo2-overlay"
+    }
+  ]
+}

@@ -52,3 +52,21 @@ Documentation: [WolvenKit quest editor](https://wiki.redmodding.org/wolvenkit/wo
 ## Development installs
 
 MO2 Modlists installs a hash-locked package snapshot. Editing this repository does not update an installed profile. Rebuild the archive and ZIP, then run the reviewed `add --replace` update against the test profile with the game closed. Refresh the open MO2 window afterwards. The game cannot load the Python builder or authoring JSON directly.
+
+## MO2 Modlists manifest
+
+The repository's `modlist.json` pins the `v0.1.2-prototype` GitHub release asset
+and its SHA-256. `recipes/cassel-twins-survive.json` declares the archive mapping
+and the ArchiveXL dependency, which resolves RED4ext transitively.
+
+Select the repository manifest in MO2 Modlists, or use its public URL when the
+repository is public:
+
+`https://raw.githubusercontent.com/ubyjvovk/cassel-twins-survive/main/modlist.json`
+
+The mod ZIP is distributed as a release asset, separately from the source tree.
+For local builds, use the local-archive manifest produced under `dist/` instead.
+Run `python tools/prepare_manifest.py` after building a release to update the
+repository manifest and hash-bound recipe; publish that exact ZIP under the
+matching version tag. Private repositories require authenticated downloads and
+are not supported by the current public-URL manifest loader.
