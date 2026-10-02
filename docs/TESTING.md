@@ -56,3 +56,17 @@ Computer-use capture encountered a minimized game window and a `FrameArrived tim
 - Inspect actual NPC life state if the scene presents any sign that death is triggered outside the inspected scene.
 
 This is an experimental quest patch, not a completed gameplay acceptance result.
+
+## User playtest and 0.1.1 follow-up
+
+The user replayed 0.1.0 on 2026-10-02 and reported no shootings, successful code download, and reaching the point after putting on the netrunner suit. The old "You killed them" choice remained, Reed did not give the new reassurance, and the twins had no small unconscious movements. Movement was explicitly optional.
+
+Inspected a contact sheet extracted from the user's Game Bar recording `Cyberpunk 2077 (C) 2020 by CD Projekt RED 2026-10-02 13-06-33.mp4`. It shows the taser sequence, twins on the floor, the no-objection response ("OK, first step's behind us" / "Targets neutralized"), code transfer, and suit objective. This supports the reported bounded success, not all branches or final mission completion.
+
+The first build only changed embedded choice text, but the original external `q304_05_garage.json` subtitle resource also contains the choice's localization ID. Version 0.1.1 assigns each rewritten option a fresh ID, with matching entries in both the custom subtitle resource and the embedded store. Regression coverage includes option pairs that share an original ID.
+
+Reed's original no-objection line (screenplay item 1793, section 520) now also gives the reassurance, lasting 6.5 seconds. The objection branch already contains it in item 1281. Seven integration tests and final binary JSON roundtrip pass. Rewritten speech remains subtitle-only.
+
+The 0.1.1 manifest resolved to three packages. An offline fresh resolution lacked dependency metadata; normal resolution supplied it. The locked artifact can be installed offline. The attempted update-plan snapshot stopped because the test game is running; the user was asked to exit before deployment. Built files are in `dist/0.1.1-prototype/`.
+
+Optional unconscious motion is deferred. The inspected scene uses dedicated cinematic floor workspots; replacing them needs an alignment check against V's existing jack-in animation. The working floor placement and execution removal are unchanged in 0.1.1.

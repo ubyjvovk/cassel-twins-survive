@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCENE = Path('ep1/quest/main_quests/q304/scenes/q304_05_garage.scene')
 SOURCE_SHA256 = '84d98c42f3fac9ade1437d9472e6541f37077775ae1907f67c87f6a5c611bf97'
 NAME = 'cassel_twins_survive'
+VERSION = '0.1.1-prototype'
 CUSTOM = Path('cassel_twins_survive/localization/en-us')
 
 
@@ -50,7 +51,7 @@ def patch(document, dialogue):
     document = copy.deepcopy(document)
     root = document['Data']['RootChunk']
     nodes = {x['Data']['nodeId']['id']: x['Data'] for x in root['sceneGraph']['Data']['graph']}
-    report = {'removed_events': [], 'redirected_workspots': [], 'dialogue': [], 'version': '0.1.0-prototype'}
+    report = {'removed_events': [], 'redirected_workspots': [], 'dialogue': [], 'options': [], 'version': VERSION}
 
     # The first segments stun and extract the twins. The continuation segments
     # contain the executions. Reuse the final floor/standing workspots instead.
@@ -105,6 +106,7 @@ def patch(document, dialogue):
             prop['spawnDespawnParams']['isEnabled'] = 0
 
     subtitles = []
+    localization_changes = {}
     changed = {int(k): v for k, v in dialogue['lines'].items()}
     for line in root['screenplayStore']['lines']:
         item = line['itemId']['id']
@@ -114,18 +116,51 @@ def patch(document, dialogue):
         new_id = str(16002026000000000000 + item)
         old_id = line['locstringId']['ruid']
         line['locstringId']['ruid'] = new_id
+        localization_changes.setdefault(old_id, []).append((new_id, changed[item]))
         for key in ('femaleLipsyncAnimationName', 'maleLipsyncAnimationName'):
             line[key]['$value'] = 'None'
         subtitles.append({'$type': 'localizationPersistenceSubtitleEntry', 'femaleVariant': changed[item], 'maleVariant': '', 'stringId': new_id})
         report['dialogue'].append({'item': item, 'old_id': old_id, 'new_id': new_id, 'text': changed[item]})
     option_text = {int(k): v for k, v in dialogue['options'].items()}
-    option_ids = {o['locstringId']['ruid']: option_text[o['itemId']['id']] for o in root['screenplayStore']['options'] if o['itemId']['id'] in option_text}
-    for descriptor in root['locStore']['vdEntries']:
-        text = option_ids.get(descriptor['locstringId']['ruid'])
-        if text and descriptor['localeId'] in ('en_us', 'db_db'):
-            payload = root['locStore']['vpEntries'][descriptor['vpeIndex']]
-            assert payload['variantId'] == descriptor['variantId']
-            payload['content'] = text
+    for option in root['screenplayStore']['options']:
+        item = option['itemId']['id']
+        if item not in option_text:
+            continue
+        old_id = option['locstringId']['ruid']
+        new_id = str(16002026000100000000 + item)
+        option['locstringId']['ruid'] = new_id
+        localization_changes.setdefault(old_id, []).append((new_id, option_text[item]))
+        subtitles.append({'$type': 'localizationPersistenceSubtitleEntry', 'femaleVariant': option_text[item], 'maleVariant': '', 'stringId': new_id})
+        report['options'].append({'item': item, 'old_id': old_id, 'new_id': new_id, 'text': option_text[item]})
+
+    # Choices can resolve through the global subtitle table as well as the
+    # embedded store. Give them fresh IDs and supply BOTH lookup routes.
+    # Mirror rewritten spoken lines in the embedded store for the same reason.
+    descriptors = root['locStore']['vdEntries']
+    payloads = root['locStore']['vpEntries']
+    new_descriptors = []
+    for descriptor in descriptors:
+        for new_id, text in localization_changes.get(descriptor['locstringId']['ruid'], []):
+            fresh = copy.deepcopy(descriptor)
+            variant = str(16202026000000000000 + len(new_descriptors))
+            fresh['locstringId']['ruid'] = new_id
+            fresh['variantId']['ruid'] = variant
+            fresh['vpeIndex'] = len(payloads)
+            payloads.append({'$type': 'scnlocLocStoreEmbeddedVariantPayloadEntry', 'content': text,
+                             'variantId': {'$type': 'scnlocVariantId', 'ruid': variant}})
+            new_descriptors.append(fresh)
+    locales = list(dict.fromkeys(d['localeId'] for d in descriptors))
+    descriptors.extend(new_descriptors)
+    descriptors.sort(key=lambda d: (locales.index(d['localeId']), int(d['locstringId']['ruid']), int(d['signature']['val'])))
+
+    # The no-objection path originally only said "Targets neutralized". Put the
+    # reassurance there too and allow time to read it before the join advances.
+    reassurance = nodes[520]
+    assert reassurance['sectionDuration']['stu'] == 1736
+    reassurance['sectionDuration']['stu'] = 6500
+    event = next(e['Data'] for e in reassurance['events'] if e['Data']['$type'] == 'scnDialogLineEvent')
+    assert event['screenplayLineId']['id'] == 1793
+    event['duration'] = 6500
     validate(document)
     return document, subtitles, report
 
@@ -178,7 +213,7 @@ def main():
         target = cooked / path
         if not target.is_file() or target.read_bytes()[:4] != b'CR2W':
             raise RuntimeError(f'Missing or invalid compiled resource: {target}')
-    dist = ROOT / 'dist'
+    dist = ROOT / 'dist' / VERSION
     package = dist / 'package/archive/pc/mod'
     package.mkdir(parents=True, exist_ok=True)
     run('pack', cooked, '-o', package)
@@ -190,15 +225,17 @@ def main():
     report['archive_sha256'] = hashlib.sha256(archive.read_bytes()).hexdigest()
     report['runtime_verified'] = False
     write(dist / 'build-report.json', report)
-    with zipfile.ZipFile(dist / 'cassel-twins-survive-0.1.0-prototype.zip', 'w', zipfile.ZIP_DEFLATED) as bundle:
+    zip_path = dist / f'cassel-twins-survive-{VERSION}.zip'
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as bundle:
         for file in sorted((dist / 'package').rglob('*')):
             if file.is_file():
-                bundle.write(file, file.relative_to(dist / 'package'))
-    zip_path = dist / 'cassel-twins-survive-0.1.0-prototype.zip'
+                info = zipfile.ZipInfo(file.relative_to(dist / 'package').as_posix(), (2026, 10, 2, 0, 0, 0))
+                info.compress_type = zipfile.ZIP_DEFLATED
+                bundle.writestr(info, file.read_bytes())
     digest = hashlib.sha256(zip_path.read_bytes()).hexdigest()
     write(dist / 'recipe.json', {
         'schemaVersion': 1, 'component': 'local/cassel-twins-survive',
-        'version': '0.1.0-prototype', 'revision': '1', 'artifact': 'sha256:' + digest,
+        'version': VERSION, 'revision': '1', 'artifact': 'sha256:' + digest,
         'game': {'id': 'cyberpunk2077', 'version': '2.31', 'dlc': ['phantom-liberty']},
         'dependencies': {'ArchiveXL': {'source': {'type': 'nexus', 'game': 'cyberpunk2077', 'modId': 4198, 'fileId': 159683}}},
         'mappings': [{'from': 'archive', 'to': 'archive', 'class': 'mo2-overlay'}]})

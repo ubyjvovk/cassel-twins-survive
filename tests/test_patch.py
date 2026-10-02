@@ -48,8 +48,35 @@ class ScenePatchTests(unittest.TestCase):
         old_ids = {l['locstringId']['ruid'] for l in self.original['Data']['RootChunk']['screenplayStore']['lines']}
         new_ids = {s['stringId'] for s in self.subtitles}
         self.assertFalse(old_ids & new_ids)
-        self.assertEqual(len(new_ids), len(read(ROOT / 'src/dialogue.json')['lines']))
+        dialogue = read(ROOT / 'src/dialogue.json')
+        self.assertEqual(len(new_ids), len(dialogue['lines']) + len(dialogue['options']))
         self.assertTrue(any("come to their senses" in s['femaleVariant'] for s in self.subtitles))
+
+    def test_choices_resolve_through_both_localization_routes(self):
+        subtitle_text = {s['stringId']: s['femaleVariant'] for s in self.subtitles}
+        old_options = {o['itemId']['id']: o['locstringId']['ruid'] for o in self.original['Data']['RootChunk']['screenplayStore']['options']}
+        expected = read(ROOT / 'src/dialogue.json')['options']
+        for option in self.root['screenplayStore']['options']:
+            item = str(option['itemId']['id'])
+            if item not in expected:
+                continue
+            loc_id = option['locstringId']['ruid']
+            self.assertNotEqual(loc_id, old_options[int(item)])
+            self.assertEqual(subtitle_text[loc_id], expected[item])
+            descriptors = [d for d in self.root['locStore']['vdEntries'] if d['locstringId']['ruid'] == loc_id and d['localeId'] == 'en_us']
+            self.assertTrue(descriptors)
+            for d in descriptors:
+                p = self.root['locStore']['vpEntries'][d['vpeIndex']]
+                self.assertEqual(p['variantId'], d['variantId'])
+                self.assertEqual(p['content'], expected[item])
+
+    def test_reassurance_is_on_both_response_paths(self):
+        lines = {l['itemId']['id']: l for l in self.root['screenplayStore']['lines']}
+        subtitle_text = {s['stringId']: s['femaleVariant'] for s in self.subtitles}
+        for item in (1281, 1793):
+            self.assertIn('come to their senses', subtitle_text[lines[item]['locstringId']['ruid']])
+        node = next(n['Data'] for n in self.root['sceneGraph']['Data']['graph'] if n['Data']['nodeId']['id'] == 520)
+        self.assertGreaterEqual(node['sectionDuration']['stu'], 6000)
 
     def test_rejects_dangling_handle(self):
         bad = copy.deepcopy(self.patched)
