@@ -70,3 +70,32 @@ Reed's original no-objection line (screenplay item 1793, section 520) now also g
 The 0.1.1 manifest resolved to three packages. An offline fresh resolution lacked dependency metadata; normal resolution supplied it. The locked artifact can be installed offline. The attempted update-plan snapshot stopped because the test game is running; the user was asked to exit before deployment. Built files are in `dist/0.1.1-prototype/`.
 
 Optional unconscious motion is deferred. The inspected scene uses dedicated cinematic floor workspots; replacing them needs an alignment check against V's existing jack-in animation. The working floor placement and execution removal are unchanged in 0.1.1.
+
+## 0.1.2 audio and deployment
+
+The latest screenshot (13:27:13) showed the old Alex option. Inspection of the
+installed archive SHA256 `9d8bbe8044b7bf640e05c2393049fda673a02f355ff85dbbd2dabbbc3931dc2d`
+confirmed it was still the first prototype, with old option IDs and a 1736 ms
+section 520. The pending 0.1.1 changes had not reached that profile.
+
+Version 0.1.2 adds a locally synthesized Microsoft Mark recording to both
+reassurance branches through an ArchiveXL VO map. Source duration 115510 samples
+at 24 kHz (4.812917 s); both player-gender VO paths reference it. The no-objection
+slot is 6.5 s; the objection slot remains 5.677 s. Other rewritten lines are silent.
+
+Eight tests pass. The five-resource archive was extracted; the scene graph, all
+four Alex choice localization joins, VO resource references, and WEM byte identity
+were checked after packing. vgmstream r2117 decoded the WEM successfully with
+the exact source sample count. WolvenKit's wwise subcommand failed in its argument
+binder, so vgmstream provided the independent decoder check.
+
+MO2 Modlists add --replace updated Cassel Twins Survive - Test offline after
+reviewing the generated plan; the game was closed. The plan reused both existing
+framework dependencies and removed no components or root files. Verification:
+34 managed files, zero differences. Export recorded all three components.
+The updated mod folder is Cassel Twins Survive (Cassel Twins Survive - Test).
+
+Replay ManualSave-46 to check audible reassurance, subtitle pacing, and the Alex
+option 'How long will they be out, Alex?'. This is not yet an in-game audio pass.
+
+MO2 was refreshed with F5 after the update. Its UI lists the new mod folder, and a second profile verification still reports 34 files with zero differences.

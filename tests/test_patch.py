@@ -2,10 +2,11 @@
 import copy
 import sys
 import unittest
+import wave
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
-from build import ROOT, SCENE, patch, read, validate
+from build import ROOT, SCENE, patch, read, validate, voiceover
 from inspect_scene import walk
 
 
@@ -83,6 +84,19 @@ class ScenePatchTests(unittest.TestCase):
         bad['bad'] = {'HandleRefId': 'missing'}
         with self.assertRaisesRegex(AssertionError, 'Dangling'):
             validate(bad)
+
+    def test_voice_paths_and_timing_cover_both_reassurance_branches(self):
+        template = read(ROOT / 'work/original/ep1/localization/en-us/subtitles/quest/q304/q304_05_garage.json.json')
+        entries = voiceover(template)['Data']['RootChunk']['root']['Data']['entries']
+        lines = {l['itemId']['id']: l for l in self.root['screenplayStore']['lines']}
+        self.assertEqual({e['stringId'] for e in entries}, {lines[i]['locstringId']['ruid'] for i in (1281, 1793)})
+        with wave.open(str(ROOT / 'src/audio/reed_reassurance.wav')) as wav:
+            duration = wav.getnframes() * 1000 / wav.getframerate()
+        for entry in entries:
+            self.assertEqual(entry['femaleResPath'], entry['maleResPath'])
+        for event in walk(self.root):
+            if event.get('$type') == 'scnDialogLineEvent' and event['screenplayLineId']['id'] in (1281, 1793):
+                self.assertGreater(event['duration'], duration + 300)
 
     def test_blood_appearance_operations_are_empty(self):
         names = [o['appearanceName']['$value'] for o in walk(self.root) if 'appearanceName' in o and isinstance(o['appearanceName'], dict)]

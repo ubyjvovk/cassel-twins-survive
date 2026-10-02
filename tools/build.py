@@ -3,7 +3,9 @@ import argparse
 import copy
 import hashlib
 import json
+import shutil
 import subprocess
+import wave
 import zipfile
 from pathlib import Path
 
@@ -13,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCENE = Path('ep1/quest/main_quests/q304/scenes/q304_05_garage.scene')
 SOURCE_SHA256 = '84d98c42f3fac9ade1437d9472e6541f37077775ae1907f67c87f6a5c611bf97'
 NAME = 'cassel_twins_survive'
-VERSION = '0.1.1-prototype'
+VERSION = '0.1.2-prototype'
 CUSTOM = Path('cassel_twins_survive/localization/en-us')
 
 
@@ -171,6 +173,15 @@ def resource(template, data):
     return doc
 
 
+def voiceover(template):
+    path = str(CUSTOM / 'vo/reed_reassurance.wem').replace('/', '\\')
+    ref = {'DepotPath': {'$type': 'ResourcePath', '$storage': 'string', '$value': path}, 'Flags': 'Soft'}
+    return resource(template, {'$type': 'locVoiceoverMap', 'entries': [
+        {'$type': 'locVoLineEntry', 'stringId': str(16002026000000000000 + item),
+         'femaleResPath': copy.deepcopy(ref), 'maleResPath': copy.deepcopy(ref)}
+        for item in (1281, 1793)]})
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--game', type=Path, default=Path('E:/Games/Cyberpunk 2077'))
@@ -204,7 +215,17 @@ def main():
         'subtitleGroup': {'$type': 'CName', '$storage': 'string', '$value': 'quest'}}]})
     raw = ROOT / 'work/build/raw'
     cooked = ROOT / 'work/build' / NAME
-    for path, data in [(SCENE, doc), (CUSTOM / 'subtitles.json', subdoc), (CUSTOM / 'subtitles_map.json', submap)]:
+    with wave.open(str(ROOT / 'src/audio/reed_reassurance.wav')) as wav:
+        audio_ms = wav.getnframes() * 1000 / wav.getframerate()
+    # Both existing response paths must accommodate the complete recording.
+    assert audio_ms <= 5677, 'Reassurance exceeds the objection branch dialog slot'
+    audio = cooked / CUSTOM / 'vo/reed_reassurance.wem'
+    audio.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(ROOT / 'src/audio/reed_reassurance.wem', audio)
+    report['voiceover'] = {'voice': 'Microsoft Mark', 'duration_ms': audio_ms,
+                         'items': [1281, 1793], 'sha256': hashlib.sha256(audio.read_bytes()).hexdigest()}
+    for path, data in [(SCENE, doc), (CUSTOM / 'subtitles.json', subdoc), (CUSTOM / 'subtitles_map.json', submap),
+                       (CUSTOM / 'voiceover_map.json', voiceover(template))]:
         source = raw / (str(path) + '.json')
         write(source, data)
         output = cooked / path.parent
@@ -220,7 +241,7 @@ def main():
     archive = package / f'{NAME}.archive'
     if not archive.is_file():
         raise RuntimeError('WolvenKit produced no archive')
-    (package / f'{NAME}.archive.xl').write_text('localization:\n  subtitles:\n    en-us:\n      - cassel_twins_survive\\localization\\en-us\\subtitles_map.json\n', encoding='utf-8')
+    (package / f'{NAME}.archive.xl').write_text('localization:\n  subtitles:\n    en-us:\n      - cassel_twins_survive\\localization\\en-us\\subtitles_map.json\n  vomaps:\n    en-us:\n      - cassel_twins_survive\\localization\\en-us\\voiceover_map.json\n', encoding='utf-8')
     report['source_sha256'] = actual
     report['archive_sha256'] = hashlib.sha256(archive.read_bytes()).hexdigest()
     report['runtime_verified'] = False

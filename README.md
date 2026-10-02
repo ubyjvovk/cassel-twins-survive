@@ -6,13 +6,13 @@ In **I've Seen That Face Before**, Reed and Alex incapacitate Aurore and Aymeric
 
 ## Status
 
-**0.1.1 dialogue fix built; installation pending game exit.** The user tested 0.1.0 through the suit objective: no shootings and Aurore's code download succeeded. Two dialogue issues were reported and addressed in 0.1.1; those fixes need another in-game check.
+**0.1.2 installed in the test profile.** The user tested the first prototype through the suit objective: no shootings and Aurore's code download succeeded. The current build adds generic male audio for Reed's reassurance and deploys the choice-ID and timing fixes. This version needs an in-game replay.
 
 The archive removes the continuation animations containing the shootings, gun props, shot audio, blood effects and bloody appearance changes. It retains the initial taser sequence and hands actors over to the existing floor/standing workspots. Those animation transitions may still need refinement after visual testing.
 
-Rewritten dialogue is English, subtitle-only. It uses new localization IDs so the original execution dialogue does not play. Reed's response on either first-choice path is: "Leave them be. We'll be done by the time they come to their senses." The no-objection path gives this subtitle 6.5 seconds. Edited choices have new IDs supplied through both the embedded scene store and the global subtitle map; changing only embedded text was insufficient in the first live test. Enable dialogue subtitles for testing.
+Rewritten dialogue is English. Reed's reassurance now has a 4.8-second Microsoft Mark recording; other rewritten lines remain subtitle-only. It uses new localization IDs so the original execution dialogue does not play. Reed's response on either first-choice path is: "Leave them be. We'll be done by the time they come to their senses." The no-objection path gives this subtitle 6.5 seconds. Edited choices have new IDs supplied through both the embedded scene store and the global subtitle map; changing only embedded text was insufficient in the first live test. Enable dialogue subtitles for testing.
 
-Seven local-resource integration checks pass. Both versions were packed and their scenes re-exported with valid graph/handle references. For 0.1.0, the MO2 Modlists workflow resolved the required ArchiveXL/RED4ext dependencies, installed offline, exported, and reimported offline. Both profiles verified 34 managed files with zero differences. The game startup log confirms ArchiveXL loaded that mod's configuration and merged its subtitle map. Full mission completion remains unverified.
+Eight local-resource integration checks pass. The 0.1.2 packed scene and voice map pass roundtrip checks, and vgmstream decodes the packaged WEM format to the expected sample count. Both versions were packed and their scenes re-exported with valid graph/handle references. For 0.1.0, the MO2 Modlists workflow resolved the required ArchiveXL/RED4ext dependencies, installed offline, exported, and reimported offline. Both profiles verified 34 managed files with zero differences. The game startup log confirms ArchiveXL loaded that mod's configuration and merged its subtitle map. Full mission completion remains unverified.
 
 The installed game's `ep1_2_gamedata.archive` contains the garage scene at `ep1/quest/main_quests/q304/scenes/q304_05_garage.scene`. Its synchronized execution animations, post-execution workspots, dialogue and code-download interactions need coordinated changes. Replacing a quest flag alone cannot deliver the intended scene.
 
@@ -39,12 +39,16 @@ python tools/build.py --game 'E:/Games/Cyberpunk 2077' --cli '.tools/wolvenkit/W
 python -m unittest discover -s tests -v
 ```
 
-The builder accepts only the inspected 2.31 garage scene's SHA-256. It extracts resources if needed, applies the source patch, checks graph references, compiles, packs, and generates a local-source MO2 Modlists manifest and hash-bound recipe in `dist/0.1.1-prototype/`. Game resources and generated archives remain untracked.
+The builder accepts only the inspected 2.31 garage scene's SHA-256. It extracts resources if needed, applies the source patch, checks graph references, compiles, packs, and generates a local-source MO2 Modlists manifest and hash-bound recipe in `dist/0.1.2-prototype/`. Game resources and generated archives remain untracked.
 
-Outputs in that version directory: `cassel-twins-survive-0.1.1-prototype.zip`, `modlist.json`, `recipe.json`, and `build-report.json`. The original 0.1.0 artifacts remain in `dist/`. ArchiveXL is required; its pinned recipe dependency allows MO2 Modlists to resolve RED4ext transitively.
+Outputs in that version directory: `cassel-twins-survive-0.1.2-prototype.zip`, `modlist.json`, `recipe.json`, and `build-report.json`. The original 0.1.0 artifacts remain in `dist/`. ArchiveXL is required; its pinned recipe dependency allows MO2 Modlists to resolve RED4ext transitively.
 
 This prototype replaces `q304_05_garage.scene` and conflicts with other mods replacing that same scene. New spoken text and edited choice text are English-only. Load a save before opening the twins' car; post-execution saves cannot validate the replacement sequence or undo their saved scene state.
 
 See `docs/TESTING.md` for the local saves, installation evidence and remaining checks.
 
 Documentation: [WolvenKit quest editor](https://wiki.redmodding.org/wolvenkit/wolvenkit-app/editor/quest-editor), [JSON conversion](https://wiki.redmodding.org/wolvenkit/wolvenkit-app/usage/import-export/import-export-as-json).
+
+## Development installs
+
+MO2 Modlists installs a hash-locked package snapshot. Editing this repository does not update an installed profile. Rebuild the archive and ZIP, then run the reviewed `add --replace` update against the test profile with the game closed. Refresh the open MO2 window afterwards. The game cannot load the Python builder or authoring JSON directly.
