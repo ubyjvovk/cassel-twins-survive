@@ -25,7 +25,7 @@ WolvenKit Console 9.0.1 is available locally in `.tools/wolvenkit/`. Extracted g
 - Identity scan, access codes and optional Voodoo Treasure information remain obtainable.
 - Dialogue and objectives describe incapacitation instead of death.
 - Firestarter starts and both major story branches remain reachable.
-- The built archive installs through a local-source MO2 Modlists manifest, reproduces offline and exports/reimports successfully.
+- The built archive installs through a local-source MO2 Modlists package, reproduces offline and exports/reimports successfully.
 - Gameplay is checked from a save before the hijack. Archive compilation and loading logs alone are insufficient.
 
 ## Tools
@@ -41,7 +41,7 @@ python -m unittest discover -s tests -v
 
 The builder accepts only the inspected 2.31 garage scene's SHA-256. It extracts resources if needed, applies the source patch, checks graph references, compiles, packs, and generates a local-source package definition in `dist/0.1.2-prototype/`. Game resources and generated archives remain untracked.
 
-Outputs in that version directory: `cassel-twins-survive-0.1.2-prototype.zip`, `package.json` and `build-report.json`. The original 0.1.0 artifacts remain in `dist/`. ArchiveXL is required; its pinned recipe dependency allows MO2 Modlists to resolve RED4ext transitively.
+Outputs in that version directory: `cassel-twins-survive-0.1.2-prototype.zip`, `package.json` and `build-report.json`. The original 0.1.0 artifacts remain in `dist/`. ArchiveXL is required; its named package dependency brings in RED4ext transitively.
 
 This prototype replaces `q304_05_garage.scene` and conflicts with other mods replacing that same scene. New spoken text and edited choice text are English-only. Load a save before opening the twins' car; post-execution saves cannot validate the replacement sequence or undo their saved scene state.
 
@@ -56,10 +56,10 @@ MO2 Modlists installs a hash-locked package snapshot. Editing this repository do
 ## One package definition
 
 `package.json` is the mod definition, dependency declaration, download source,
-and declarative installation recipe. It requires MO2 Modlists 0.10 or newer.
+and declarative installation instructions. It requires MO2 Modlists 0.10 or newer.
 Import this URL:
 
-`https://raw.githubusercontent.com/ubyjvovk/cassel-twins-survive/main/package.json`
+[Installable package.json](https://raw.githubusercontent.com/ubyjvovk/cassel-twins-survive/main/package.json)
 
 The top-level `name`, `version`, `dependencies`, `scripts`, and `repository` follow
 npm conventions. MO2-specific metadata lives under `mo2`. The mod depends on
@@ -67,10 +67,22 @@ npm conventions. MO2-specific metadata lives under `mo2`. The mod depends on
 sources are embedded in `mo2.packages`, using the same package format. No executable
 install script is needed: `mo2.install` copies the archive folder.
 
-The mod ZIP remains the existing 0.1.2 release asset. This schema migration changes
-installation metadata, not gameplay. The older two-file definition is preserved
-in the `v0.1.2-prototype` Git tag for older MO2 Modlists releases.
+The definition declares the finalized MO2 Modlists package schema. The mod ZIP
+remains the existing 0.1.2 release asset with its original integrity pin; this
+update changes package metadata and tooling only.
+
+To add it to an existing profile, use **Add mod/modlist to current profile…** or
+choose the current-profile option when importing the URL. MO2 Modlists starts
+from the enabled profile and reuses installed dependencies that satisfy these
+requirements. **Reuse compatible installed versions** is the default; choose
+**Upgrade to newer compatible versions** to opt into available upgrades. Exact
+pins still apply: this package currently supplies the tested ArchiveXL 1.27.3
+and RED4ext 1.30.0 definitions, with RED4ext pinned by ArchiveXL.
+
+The `scripts.build` and `scripts.prepare:release` commands are development tools.
+MO2 Modlists does not run them during installation, and this package has no
+`scripts.install` command.
 
 A local build writes `dist/<version>/package.json` with a local ZIP source.
-`python tools/prepare_manifest.py` updates the repository definition to point to
+`python tools/prepare_package.py` updates the repository definition to point to
 the corresponding GitHub release. Publish that exact ZIP before sharing the URL.

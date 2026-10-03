@@ -1,4 +1,4 @@
-"""Prepare the repository manifest for the current, already built release ZIP."""
+"""Prepare the repository package.json for the current, already built release ZIP."""
 import hashlib
 
 from build import ROOT, VERSION, read, write

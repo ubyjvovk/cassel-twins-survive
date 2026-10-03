@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/ubyjvovk/mo2modlist/9e7e705ea04b84c0d4f3e33b6662168689929dff/mo2_modlists/package.schema.json",
   "name": "cassel-twins-survive",
   "version": "0.1.2-prototype",
   "displayName": "Cassel Twins Survive",
@@ -91,7 +92,8 @@
     "url": "https://github.com/ubyjvovk/cassel-twins-survive.git"
   },
   "scripts": {
-    "build": "python tools/build.py"
+    "build": "python tools/build.py",
+    "prepare:release": "python tools/prepare_package.py"
   },
   "files": [
     "src",
