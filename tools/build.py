@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCENE = Path('ep1/quest/main_quests/q304/scenes/q304_05_garage.scene')
 SOURCE_SHA256 = '84d98c42f3fac9ade1437d9472e6541f37077775ae1907f67c87f6a5c611bf97'
 NAME = 'cassel_twins_survive'
-VERSION = '0.1.2-prototype'
+VERSION = json.loads((ROOT / 'package.json').read_text(encoding='utf-8'))['version']
 CUSTOM = Path('cassel_twins_survive/localization/en-us')
 
 
@@ -254,16 +254,10 @@ def main():
                 info.compress_type = zipfile.ZIP_DEFLATED
                 bundle.writestr(info, file.read_bytes())
     digest = hashlib.sha256(zip_path.read_bytes()).hexdigest()
-    write(dist / 'recipe.json', {
-        'schemaVersion': 1, 'component': 'local/cassel-twins-survive',
-        'version': VERSION, 'revision': '1', 'artifact': 'sha256:' + digest,
-        'game': {'id': 'cyberpunk2077', 'version': '2.31', 'dlc': ['phantom-liberty']},
-        'dependencies': {'ArchiveXL': {'source': {'type': 'nexus', 'game': 'cyberpunk2077', 'modId': 4198, 'fileId': 159683}}},
-        'mappings': [{'from': 'archive', 'to': 'archive', 'class': 'mo2-overlay'}]})
-    write(dist / 'modlist.json', {
-        'schemaVersion': 1, 'name': 'Cassel Twins Survive - Prototype',
-        'game': {'id': 'cyberpunk2077', 'version': '2.31', 'dlc': ['phantom-liberty']},
-        'dependencies': {'Cassel Twins Survive': {'source': {'type': 'local-archive', 'path': './' + zip_path.name}, 'recipe': './recipe.json'}}})
+    definition = read(ROOT / 'package.json')
+    definition['mo2']['sources'] = [{'type': 'local-archive', 'path': './' + zip_path.name}]
+    definition['mo2']['integrity'] = 'sha256:' + digest
+    write(dist / 'package.json', definition)
     print(f'Built {archive}. Gameplay validation pending.')
 
 

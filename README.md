@@ -39,9 +39,9 @@ python tools/build.py --game 'E:/Games/Cyberpunk 2077' --cli '.tools/wolvenkit/W
 python -m unittest discover -s tests -v
 ```
 
-The builder accepts only the inspected 2.31 garage scene's SHA-256. It extracts resources if needed, applies the source patch, checks graph references, compiles, packs, and generates a local-source MO2 Modlists manifest and hash-bound recipe in `dist/0.1.2-prototype/`. Game resources and generated archives remain untracked.
+The builder accepts only the inspected 2.31 garage scene's SHA-256. It extracts resources if needed, applies the source patch, checks graph references, compiles, packs, and generates a local-source package definition in `dist/0.1.2-prototype/`. Game resources and generated archives remain untracked.
 
-Outputs in that version directory: `cassel-twins-survive-0.1.2-prototype.zip`, `modlist.json`, `recipe.json`, and `build-report.json`. The original 0.1.0 artifacts remain in `dist/`. ArchiveXL is required; its pinned recipe dependency allows MO2 Modlists to resolve RED4ext transitively.
+Outputs in that version directory: `cassel-twins-survive-0.1.2-prototype.zip`, `package.json` and `build-report.json`. The original 0.1.0 artifacts remain in `dist/`. ArchiveXL is required; its pinned recipe dependency allows MO2 Modlists to resolve RED4ext transitively.
 
 This prototype replaces `q304_05_garage.scene` and conflicts with other mods replacing that same scene. New spoken text and edited choice text are English-only. Load a save before opening the twins' car; post-execution saves cannot validate the replacement sequence or undo their saved scene state.
 
@@ -51,22 +51,26 @@ Documentation: [WolvenKit quest editor](https://wiki.redmodding.org/wolvenkit/wo
 
 ## Development installs
 
-MO2 Modlists installs a hash-locked package snapshot. Editing this repository does not update an installed profile. Rebuild the archive and ZIP, then run the reviewed `add --replace` update against the test profile with the game closed. Refresh the open MO2 window afterwards. The game cannot load the Python builder or authoring JSON directly.
+MO2 Modlists installs a hash-locked package snapshot. Editing this repository does not update an installed profile. Rebuild the archive and ZIP, then run the reviewed `add --replace` update using the generated package.json against the test profile with the game closed. Refresh the open MO2 window afterwards. The game cannot load the Python builder or authoring JSON directly.
 
-## MO2 Modlists manifest
+## One package definition
 
-The repository's `modlist.json` pins the `v0.1.2-prototype` GitHub release asset
-and its SHA-256. `recipes/cassel-twins-survive.json` declares the archive mapping
-and the ArchiveXL dependency, which resolves RED4ext transitively.
+`package.json` is the mod definition, dependency declaration, download source,
+and declarative installation recipe. It requires MO2 Modlists 0.10 or newer.
+Import this URL:
 
-Select the repository manifest in MO2 Modlists, or use its public URL when the
-repository is public:
+`https://raw.githubusercontent.com/ubyjvovk/cassel-twins-survive/main/package.json`
 
-`https://raw.githubusercontent.com/ubyjvovk/cassel-twins-survive/main/modlist.json`
+The top-level `name`, `version`, `dependencies`, `scripts`, and `repository` follow
+npm conventions. MO2-specific metadata lives under `mo2`. The mod depends on
+`archivexl: ^1.27.3`; available ArchiveXL and RED4ext versions and their download
+sources are embedded in `mo2.packages`, using the same package format. No executable
+install script is needed: `mo2.install` copies the archive folder.
 
-The mod ZIP is distributed as a release asset, separately from the source tree.
-For local builds, use the local-archive manifest produced under `dist/` instead.
-Run `python tools/prepare_manifest.py` after building a release to update the
-repository manifest and hash-bound recipe; publish that exact ZIP under the
-matching version tag. Private repositories require authenticated downloads and
-are not supported by the current public-URL manifest loader.
+The mod ZIP remains the existing 0.1.2 release asset. This schema migration changes
+installation metadata, not gameplay. The older two-file definition is preserved
+in the `v0.1.2-prototype` Git tag for older MO2 Modlists releases.
+
+A local build writes `dist/<version>/package.json` with a local ZIP source.
+`python tools/prepare_manifest.py` updates the repository definition to point to
+the corresponding GitHub release. Publish that exact ZIP before sharing the URL.
